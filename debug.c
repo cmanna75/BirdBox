@@ -4,10 +4,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "SWseriale.h"
+
 
 
 #define FOSC 9830400            // Clock frequency = Oscillator freq.
 #define BAUD 9600               // UART0 baud rate
+//#define BAUD 115200
 #define MYUBRR (FOSC/16/BAUD)-1   // Value for UBRR0 register
 
 
@@ -18,6 +21,7 @@ void serial_out(char);
 void serial_send_string(char*);
 char serial_in();
 void ultrasonic_read();
+void send_wifi();
 
 int main(){
   init();
@@ -27,6 +31,12 @@ int main(){
     //ultrasonic
     if(input == 'u'){
       ultrasonic_read();
+    }
+    else if(input == 's'){
+      send_wifi();
+    }
+    else if(input == 't'){
+      serial_send_string('test');
     }
     else if(input == '\n'||input == '\r'){
       //if carriage returns do nothing
@@ -46,7 +56,7 @@ void init(){
   DDRD = 0xFF;
   DDRB = 0xFF;
   DDRB &= ~(1<<DDB1); //echo
-  PORTB |= (1<<PORTB1); //enable pull up on PB5
+  PORTB |= (1<<PORTB1); //enable pull up on PB1
   DDRB |= 1 << PB0; //trig
 
 
@@ -67,6 +77,13 @@ void init(){
   UCSR0B |= (1 << RXEN0 ); // Turn on receiver
   UCSR0C = (3 << UCSZ00 ); // Set for async . operation , no parity ,
                           // one stop bit , 8 data bits
+  //softserial
+  SWseriale_begin();
+
+  //wifi stuff
+
+
+  
 }
 
 //sends char
@@ -119,4 +136,14 @@ ISR(PCINT0_vect){
     serial_out('\n');
     SREG = oldSREG; //enable interrupt
   }
+}
+
+
+void send_wifi(){
+  SWseriale_write("AT",2);
+  while (SWseriale_available()){ // Checks if any character has been received
+	    uint8_t temp = SWseriale_read(); // Reads one character from SWseriale received data buffer
+      char buffer = (char)temp;
+	    serial_out(buffer); // Send one character using SWseriale
+    }
 }
