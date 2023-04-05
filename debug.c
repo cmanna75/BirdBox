@@ -30,18 +30,25 @@ int main(){
   
 
   while(1){
-    char input = serial_in();
-    //ultrasonic
-    if(input == 'u'){
-      ultrasonic_read();
-    }
-    else if(input == '\n'||input == '\r'){
-      //if carriage returns do nothing
-    }
-    else{
-      serial_send_string("invalid command\n");
-    }
-    _delay_us(10);
+    //Toggle Switch
+    while (PINC & (1 << PINC1)) { // If PC1 is HIGH
+      // char input = serial_in();
+      // //ultrasonic
+      // if(input == 'u'){
+      //   ultrasonic_read();
+      // }
+      // else if(input == '\n'||input == '\r'){
+      //   //if carriage returns do nothing
+      // }
+      // else{
+      //   serial_send_string("invalid command\n");
+      // }
+      // _delay_us(10);
+      }
+  PORTC |= 1 << PC0;      // Turns on RED debug LED
+  _delay_ms(400);
+  PORTC &= ~(1 << 0);
+  _delay_ms(400);
   }
   return 0;
 }
@@ -65,6 +72,12 @@ void port_init(){
   PCMSK0 = (1 << PCINT1);
   sei();
 
+  //toggle switch ports 
+  DDRC = 0xFF;
+  DDRC &= ~(1 << DDC1); // Set PC1 as input
+  // PORTC |= (1 << PORTC1); // Enable pull-up resistor on PC1
+}
+
   
   /*
   PRR &= ~(1<<PRTIM1);					// To activate timer1 module
@@ -82,7 +95,6 @@ void port_init(){
     // EICRA |= (1<<ISC00);
     // sei();
   
-}
 
 void serial_init() {
 
