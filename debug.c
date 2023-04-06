@@ -32,32 +32,39 @@ int main(){
   init();
 
   while(1){
-    char input = serial_in();
-    //ultrasonic
-    if(input == 'u'){
-      ultrasonic_read();
+    //Toggle Switch
+    while (PINC & (1 << PINC1)) { // If PC1 is HIGH
+      char input = serial_in();
+      //ultrasonic
+      if(input == 'u'){
+        ultrasonic_read();
+      }
+      //open servo
+      else if(input == 'c'){
+        servo_set(0,180);
+      }
+      //close servo
+      else if(input == 'o'){
+        servo_set(50,180);
+      }
+      else if(input == 's'){
+        send_wifi();
+      }
+      else if(input == 't'){
+        serial_send_string("test\n");
+      }
+      else if(input == '\n'||input == '\r'){
+        //if carriage returns do nothing
+      }
+      else{
+        serial_send_string("invalid command\n");
+      }
+      _delay_us(10);
     }
-    //open servo
-    else if(input == 'c'){
-      servo_set(0,180);
-    }
-    //close servo
-    else if(input == 'o'){
-      servo_set(50,180);
-    }
-    else if(input == 's'){
-      send_wifi();
-    }
-    else if(input == 't'){
-      serial_send_string("test\n");
-    }
-    else if(input == '\n'||input == '\r'){
-      //if carriage returns do nothing
-    }
-    else{
-      serial_send_string("invalid command\n");
-    }
-    _delay_us(10);
+    PORTC |= 1 << PC0;      // Turns on RED debug LED
+    _delay_ms(400);
+    PORTC &= ~(1 << 0);
+    _delay_ms(400);
   }
   return 0;
 }
@@ -80,6 +87,10 @@ void init(){
   
   
   sei();
+
+  //toggle switch ports 
+  DDRC &= ~(1 << DDC1); // Set PC1 as an input
+  DDRC |= (1<<DDC0); //set PC0 as an output
 
   //serial stuff
   UBRR0H = (MYUBRR>>8);
