@@ -32,31 +32,21 @@ int main(){
   init();
 
   while(1){
-    int i;
-    /*
-    for(i = 0; i <= 100; i++){
-			servo_set(i,180);
-			_delay_ms(40);
-		}
-		for(i = 100; i >= 0; i--){
-			servo_set(i,180);
-			_delay_ms(40);
-		}
-    */
-    /*
-    servo_set(0,180);
-    _delay_ms(1000);
-    servo_set(50,180);
-    _delay_ms(1000);
-    */
     char input = serial_in();
     //ultrasonic
     if(input == 'u'){
       ultrasonic_read();
     }
+    //open servo
+    else if(input == 'c'){
+      servo_set(0,180);
+    }
+    //close servo
+    else if(input == 'o'){
+      servo_set(50,180);
+    }
     else if(input == 's'){
       send_wifi();
-
     }
     else if(input == 't'){
       serial_send_string("test\n");
@@ -76,40 +66,15 @@ int main(){
 
 void init(){
   //ultrasonic ports
-
-  
-  DDRD = 0xFF;
-  DDRB = 0xFF;
-  /*
-  DDRB &= ~(1<<DDB1); //echo
-  PORTB |= (1<<PORTB1); //enable pull up on PB1
-  DDRB |= 1 << PB0; //trig
-  
-
-  
-  //interupt and timer stuff
-  PRR &= ~(1<<PRTIM1); //ensures timer1 enabled
-  TCNT1 = 0; 
-  TCCR1B |= (1 << CS10); //no clock prescaling
-  TCCR1B |= (1 << ICES1); //capture positive edge
-
-  PCICR = (1 << PCIE0); //pin change interupt 0 enabled PCINT7-0
-  PCMSK0 = (1 << PCINT1); //PB1 is trigger for interrupt
-  */
-
-  //IF WE make ultrasonic work on timer0 and 
-  
   DDRD &= ~(1<<DDD6); //echo PD6
   PORTD |= (1<<PORTD6); //enable pull up on PD6
   DDRD |= 1 << PD5; //trig is PD5
   PORTD &= ~(1 << PD5);
-
-  
   PRR &= ~(1<<PRTIM0); //ensures timer0 is enabled
   TCNT0 = 0;
   TCCR0B |= (1 << CS02)|(1<<CS00); //n8 prescae
 
-
+  //interupt for ultrasonic
   PCICR = (1 << PCIE2); //PCINT16-23
   PCMSK2 = (1<< PCINT22); //PD6 is trigger for interuppt
   
@@ -128,20 +93,10 @@ void init(){
 
   //wifi stuff
 
-  /*
+  
   //Servo stuff
-  DDRD |= (1 << DDD6);
-; //make PB2 and output
-
-  // Set Timer0 to Fast PWM mode
-  TCCR0A |= (1 << WGM01) | (1 << WGM00) | (1 << COM0A1);
-  TCCR0B |= (1 << CS02); //256 prescalaR
-  // Set Timer0 initial values for 20ms period (50Hz)
-  OCR0A = 156;
-  */
-
-  //pwm_init();
-  //servo_set(0,180);
+  pwm_init();
+  servo_set(0,180);
 
   
 }
@@ -178,28 +133,6 @@ void ultrasonic_read(){
   PORTD &= ~(1 << PD5);
 }
 
-/*
-//interrupt for Ultrasonic sensor
-ISR(PCINT0_vect){
-  if (bit_is_set(PINB,PB1)) //if rising edge 
-  {
-    TCNT1 = 0; //set timer to 0
-    PORTD |= (1 << PD0);
-  }
-  else
-  {
-    uint16_t pulse_time = TCNT1;
-    uint16_t oldSREG = SREG; 
-    cli(); //disable interrupt
-    char buffer[100];
-    itoa(pulse_time/58, buffer, 10);
-    serial_send_string(buffer); //send ultrasonic distance
-    serial_out('\n');
-    SREG = oldSREG; //enable interrupt
-  }
-}
-*/
-
 
 //interrupt for Ultrasonic sensor
 ISR(PCINT2_vect){
@@ -231,22 +164,4 @@ void send_wifi(){
       char buffer = (char)temp;
 	    serial_out(buffer); // Send one character using SWseriale
     }
-}
-
-
-void setServoAngle(uint8_t angle) {
-  // Limit the angle within the valid range
-  if (angle < SERVO_MIN_ANGLE) {
-    angle = SERVO_MIN_ANGLE;
-  } else if (angle > SERVO_MAX_ANGLE) {
-    angle = SERVO_MAX_ANGLE;
-  }
-
-  // Calculate pulse width based on the angle
-  uint16_t pulseWidth = SERVO_MIN_PULSE_WIDTH +
-                        ((SERVO_MAX_PULSE_WIDTH - SERVO_MIN_PULSE_WIDTH) *
-                         angle / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE));
-
-  // Set the pulse width by updating OCR0A register
-  OCR0A = pulseWidth / 8;
 }
