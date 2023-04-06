@@ -5,8 +5,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include "SWseriale.h"
+#include "timer1_hal.h"
 
-
+#define SERVO_MIN_ANGLE 0
+#define SERVO_MAX_ANGLE 180
+#define SERVO_MIN_PULSE_WIDTH 50u
+#define SERVO_MAX_PULSE_WIDTH 250u
 
 #define FOSC 9830400            // Clock frequency = Oscillator freq.
 #define BAUD 9600               // UART0 baud rate
@@ -22,11 +26,29 @@ void serial_send_string(char*);
 char serial_in();
 void ultrasonic_read();
 void send_wifi();
+void setServoAngle(uint8_t);
 
 int main(){
   init();
 
   while(1){
+    int i;
+    /*
+    for(i = 0; i <= 100; i++){
+			servo_set(i,180);
+			_delay_ms(40);
+		}
+		for(i = 100; i >= 0; i--){
+			servo_set(i,180);
+			_delay_ms(40);
+		}
+    */
+    /*
+    servo_set(0,180);
+    _delay_ms(1000);
+    servo_set(50,180);
+    _delay_ms(1000);
+    */
     char input = serial_in();
     //ultrasonic
     if(input == 'u'){
@@ -34,9 +56,10 @@ int main(){
     }
     else if(input == 's'){
       send_wifi();
+
     }
     else if(input == 't'){
-      serial_send_string('test');
+      serial_send_string("test\n");
     }
     else if(input == '\n'||input == '\r'){
       //if carriage returns do nothing
@@ -53,13 +76,17 @@ int main(){
 
 void init(){
   //ultrasonic ports
+
+  
   DDRD = 0xFF;
   DDRB = 0xFF;
+  /*
   DDRB &= ~(1<<DDB1); //echo
   PORTB |= (1<<PORTB1); //enable pull up on PB1
   DDRB |= 1 << PB0; //trig
+  
 
-
+  
   //interupt and timer stuff
   PRR &= ~(1<<PRTIM1); //ensures timer1 enabled
   TCNT1 = 0; 
@@ -68,6 +95,25 @@ void init(){
 
   PCICR = (1 << PCIE0); //pin change interupt 0 enabled PCINT7-0
   PCMSK0 = (1 << PCINT1); //PB1 is trigger for interrupt
+  */
+
+  //IF WE make ultrasonic work on timer0 and 
+  
+  DDRD &= ~(1<<DDD6); //echo PD6
+  PORTD |= (1<<PORTD6); //enable pull up on PD6
+  DDRD |= 1 << PD5; //trig is PD5
+  PORTD &= ~(1 << PD5);
+
+  
+  PRR &= ~(1<<PRTIM0); //ensures timer0 is enabled
+  TCNT0 = 0;
+  TCCR0B |= (1 << CS02)|(1<<CS00); //n8 prescae
+
+
+  PCICR = (1 << PCIE2); //PCINT16-23
+  PCMSK2 = (1<< PCINT22); //PD6 is trigger for interuppt
+  
+  
   sei();
 
   //serial stuff
@@ -82,6 +128,20 @@ void init(){
 
   //wifi stuff
 
+  /*
+  //Servo stuff
+  DDRD |= (1 << DDD6);
+; //make PB2 and output
+
+  // Set Timer0 to Fast PWM mode
+  TCCR0A |= (1 << WGM01) | (1 << WGM00) | (1 << COM0A1);
+  TCCR0B |= (1 << CS02); //256 prescalaR
+  // Set Timer0 initial values for 20ms period (50Hz)
+  OCR0A = 156;
+  */
+
+  //pwm_init();
+  //servo_set(0,180);
 
   
 }
@@ -113,11 +173,12 @@ char serial_in ()
 void ultrasonic_read(){
   //send trig pulse for 10 us
     _delay_us(60);
-  PORTB |= (1<< PB0);
+  PORTD |= (1<< PD5);
   _delay_us(10);
-  PORTB &= ~(1 << PB0);
+  PORTD &= ~(1 << PD5);
 }
 
+/*
 //interrupt for Ultrasonic sensor
 ISR(PCINT0_vect){
   if (bit_is_set(PINB,PB1)) //if rising edge 
@@ -137,6 +198,30 @@ ISR(PCINT0_vect){
     SREG = oldSREG; //enable interrupt
   }
 }
+*/
+
+
+//interrupt for Ultrasonic sensor
+ISR(PCINT2_vect){
+  if (bit_is_set(PIND,PD6)) //if rising edge 
+  {
+    TCNT0 = 0; //set timer to 0
+    PORTD |= (1 << PD0);
+  }
+  else
+  {
+    uint8_t pulse_time = TCNT0;
+    uint8_t oldSREG = SREG; 
+    cli(); //disable interrupt
+    char buffer[100];
+    itoa(pulse_time, buffer, 10);
+    serial_send_string(buffer); //send ultrasonic distance
+    serial_out('\n');
+    SREG = oldSREG; //enable interrupt
+  }
+}
+
+
 
 
 void send_wifi(){
@@ -146,4 +231,22 @@ void send_wifi(){
       char buffer = (char)temp;
 	    serial_out(buffer); // Send one character using SWseriale
     }
+}
+
+
+void setServoAngle(uint8_t angle) {
+  // Limit the angle within the valid range
+  if (angle < SERVO_MIN_ANGLE) {
+    angle = SERVO_MIN_ANGLE;
+  } else if (angle > SERVO_MAX_ANGLE) {
+    angle = SERVO_MAX_ANGLE;
+  }
+
+  // Calculate pulse width based on the angle
+  uint16_t pulseWidth = SERVO_MIN_PULSE_WIDTH +
+                        ((SERVO_MAX_PULSE_WIDTH - SERVO_MIN_PULSE_WIDTH) *
+                         angle / (SERVO_MAX_ANGLE - SERVO_MIN_ANGLE));
+
+  // Set the pulse width by updating OCR0A register
+  OCR0A = pulseWidth / 8;
 }
