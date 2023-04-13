@@ -1,7 +1,6 @@
 /*
 EE459 Team 18 Project - Bird Box
 Will Volpe, Chris Manna, Aaron Bergen
-
 */
 
 // Import required libraries
@@ -15,14 +14,24 @@ Will Volpe, Chris Manna, Aaron Bergen
 // Replace with network credentials
 const char* ssid = "Will";
 const char* password = "wifiwill";
+// const char* ssid = "USC Guest Wireless";
+// const char* password = "";
 
 bool camState = 0;
 bool ledState = 0;
 bool doorState = 0;
+bool redledState = 0;
 
-const int camPin = 12;
+const int camPin = 16;
 const int ledPin = 4;
 const int doorPin = 13;
+const int redledPin = 33;
+const int cam_atmega_pin = 12;
+const int test_1_pin = 16;
+const int test_2_pin = 0;
+const int test_3_pin = 3;
+const int test_4_pin = 1;
+
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -190,6 +199,7 @@ void notifyClients_cam() { ws.textAll(String(camState)); }
 void notifyClients_led() { ws.textAll(String(ledState + 2)); }
 void notifyClients_door() { ws.textAll(String(doorState + 4)); }
 
+
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) 
 {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
@@ -311,19 +321,32 @@ void setup(){
   pinMode(camPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
   pinMode(doorPin, OUTPUT);
+  pinMode(redledPin, OUTPUT);
+  pinMode(cam_atmega_pin, INPUT);
+  pinMode(test_1_pin, INPUT);
+  pinMode(test_2_pin, INPUT);
+  pinMode(test_3_pin, INPUT);
+  pinMode(test_4_pin, INPUT);
+
 
 
   digitalWrite(camPin, LOW);
   digitalWrite(ledPin, LOW);
   digitalWrite(doorPin, LOW);
+  digitalWrite(redledPin, LOW);
 
   
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
     Serial.println("Connecting to WiFi..");
+    redledState = !redledState;
+    digitalWrite(redledPin, redledState);
+    delay(1000);
+
   }
+  digitalWrite(redledPin, LOW);
+
 
   // Print ESP Local IP Address
   Serial.println(WiFi.localIP());
@@ -342,8 +365,31 @@ void setup(){
 
 void loop() {
   ws.cleanupClients();
-  digitalWrite(camPin, camState);
+  //digitalWrite(camPin, camState);
   digitalWrite(ledPin, ledState);
   digitalWrite(doorPin, doorState);
+  int pin_12, pin_16, pin_0, pin_3, pin_1;
+  pin_12 = digitalRead(cam_atmega_pin);
+  pin_16 = digitalRead(test_1_pin);
+  pin_0 = digitalRead(test_2_pin);
+  pin_3 = digitalRead(test_3_pin);
+  pin_1 = digitalRead(test_4_pin);
+  if (pin_12 == 1)
+  {
+    digitalWrite(redledPin, HIGH);
+    ws.textAll(String(1));
+  }
+  else
+  {
+    if (camState == 0)
+    {
+      digitalWrite(redledPin, LOW);
+      ws.textAll(String(0));
+    }   
+  }  
+  delay(1000);
+
+  
+  
 
 }
