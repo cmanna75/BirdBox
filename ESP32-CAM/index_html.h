@@ -11,18 +11,25 @@ const char index_html[] PROGMEM = R"rawliteral(
   }
   img {  
     width: auto; 
-    max-width: 400px; 
+    max-width: 500px; 
     height: auto; 
-    padding-top: 20px; 
+    padding: 15px; 
   }
   h1 {
     font-size: 1.8rem;
     color: white;
+    margin: 6px
   }
   h2{
     font-size: 1.5rem;
     font-weight: bold;
     color: #143642;
+    margin: 2px;
+  }
+  h3{
+    font-size: 0.7rem;
+    color: white;
+    margin: 3px
   }
   .topnav {
     overflow: hidden;
@@ -31,23 +38,30 @@ const char index_html[] PROGMEM = R"rawliteral(
   body {
     margin: 0;
   }
-  .content {
-    padding: 30px;
-    max-width: 600px;
-    margin: 0 auto;
+  .content_top {
+    background-color: #ADD8E6;
     display: flex;
-    justify-content: space-between;
+  }
+  .content_bottom {
+    background-color: #ADD8E6;
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
   .card {
     background-color: #F8F7F9;;
-    box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);
-    padding-top:10px;
-    padding-bottom:20px;
-    margin-right: 20px;
-    margin-left: 20px;
+    box-shadow: 2px 2px 2px 1px rgba(140,140,140,.5);
+    padding-top:2px;
+    padding-bottom:2px;
+    margin: 10px;    
+    flex: 1;
+    border: none;
+    border-radius: 5px;
   }
   .button {
-    padding: 15px 50px;
+    padding: 10px 50px;
     font-size: 24px;
     text-align: center;
     outline: none;
@@ -62,6 +76,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     -ms-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: rgba(0,0,0,0);
+    margin: 1px
   }
   .button:active {
     background-color: #c90411;
@@ -72,27 +87,30 @@ const char index_html[] PROGMEM = R"rawliteral(
     font-size: 1.5rem;
     color:#8c8c8c;
     font-weight: bold;
+    margin: 1px
+  }
+  p {
+    margin:3px
   }
   </style>
 </head>
 <body>
   <div class="topnav">
     <h1>Bird Box</h1>
+    <h3>EE549 - Team 18 - Will Volpe - Chris Manna - Aaron Bergen</h3>
   </div>
-  <div class="content">  
+  <div class="content_top">  
     <div class="card">
-      <h2>NIGHT MODE</h2>
-      <p class="state">state: <span id="night_state">%NIGHT_STATE%</span></p>
-      <p><button id="night_button" class="button">Night</button></p>
+      <h2>Night Status</h2>
+      <p><button id="night_button" class="button">%NIGHT_STATE%</button></p>
     </div>
     <div class="card">
-      <h2>Feeder Fill Status</h2>
-      <p class="state">state: <span id="fill_state">%FILL_STATE%</span></p>
-      <p><button id="fill_button" class="button">Fill</button></p>
+      <h2>Feed Status</h2>
+      <p><button id="fill_button" class="button">%FILL_STATE%</button></p>
     </div>
   </div>
   <img src="" id="photo">
-  <div class="content">
+  <div class="content_bottom">
     <div class="card">
       <h2>Camera</h2>
       <p class="state">state: <span id="cam_state">%CAM_STATE%</span></p>
@@ -104,7 +122,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       <p><button id="led_button" class="button">Toggle LED</button></p>
     </div>
     <div class="card">
-      <h2>GPIO 13</h2>
+      <h2>Door</h2>
       <p class="state">state: <span id="door_state">%DOOR_STATE%</span></p>
       <p><button id="door_button" class="button">Toggle Door</button></p>
     </div>
@@ -137,10 +155,10 @@ const char index_html[] PROGMEM = R"rawliteral(
       case '3': document.getElementById("led_state").innerHTML = "ON &nbsp;"; document.getElementById('led_button').style.backgroundColor = "#04b50a"; break;
       case '4': document.getElementById("door_state").innerHTML = "OPEN &nbsp;"; document.getElementById('door_button').style.backgroundColor = "#04b50a"; break;
       case '5': document.getElementById("door_state").innerHTML = "CLOSED"; document.getElementById('door_button').style.backgroundColor = "#c90411"; break;
-      case '6': document.getElementById("night_state").innerHTML = "OFF"; document.getElementById('night_button').style.backgroundColor = "#c90411"; break;
-      case '7': document.getElementById("night_state").innerHTML = "ON &nbsp;"; document.getElementById('night_button').style.backgroundColor = "#04b50a"; break;
-      case '8': document.getElementById("fill_state").innerHTML = "FULL"; document.getElementById('fill_button').style.backgroundColor = "#04b50a"; break;
-      case '9': document.getElementById("fill_state").innerHTML = "EMPTY &nbsp;"; document.getElementById('fill_button').style.backgroundColor = "#c90411"; break;
+      case '6': document.getElementById("night_button").innerHTML = "OFF"; document.getElementById('night_button').style.backgroundColor = "#c90411"; break;
+      case '7': document.getElementById("night_button").innerHTML = "ON &nbsp;"; document.getElementById('night_button').style.backgroundColor = "#04b50a"; break;
+      case '8': document.getElementById("fill_button").innerHTML = "FULL"; document.getElementById('fill_button').style.backgroundColor = "#04b50a"; break;
+      case '9': document.getElementById("fill_button").innerHTML = "EMPTY"; document.getElementById('fill_button').style.backgroundColor = "#c90411"; break;
     }
   }
 

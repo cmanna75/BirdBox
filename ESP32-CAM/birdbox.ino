@@ -12,10 +12,10 @@ Will Volpe, Chris Manna, Aaron Bergen
 #include "esp_camera.h"
 
 // Replace with network credentials
-// const char* ssid = "Will";
-// const char* password = "wifiwill";
-const char* ssid = "SpectrumSetup-7F";
-const char* password = "hotelquaint730";
+const char* ssid = "Will";
+const char* password = "wifiwill";
+// const char* ssid = "SpectrumSetup-7F";
+// const char* password = "hotelquaint730";
 
 bool camState = 0;
 bool ledState = 0;
