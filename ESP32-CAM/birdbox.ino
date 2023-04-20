@@ -12,25 +12,30 @@ Will Volpe, Chris Manna, Aaron Bergen
 #include "esp_camera.h"
 
 // Replace with network credentials
-const char* ssid = "Will";
-const char* password = "wifiwill";
-// const char* ssid = "USC Guest Wireless";
-// const char* password = "";
+// const char* ssid = "Will";
+// const char* password = "wifiwill";
+const char* ssid = "SpectrumSetup-7F";
+const char* password = "hotelquaint730";
 
 bool camState = 0;
 bool ledState = 0;
-bool doorState = 0;
+bool local_ledState = 0;
+bool doorState = 1;
 bool redledState = 0;
+bool nightState = 0;
+bool fillState = 0;
 
-const int camPin = 16;
+// working
 const int ledPin = 4;
 const int doorPin = 13;
 const int redledPin = 33;
 const int cam_atmega_pin = 12;
-const int test_1_pin = 16;
-const int test_2_pin = 0;
-const int test_3_pin = 3;
-const int test_4_pin = 1;
+const int pin_14 = 14;
+const int pin_15 = 15;
+
+// in progress
+const int pin_2 = 2;
+
 
 
 // Create AsyncWebServer object on port 80
@@ -198,6 +203,10 @@ void streamJpg(AsyncWebServerRequest *request){
 void notifyClients_cam() { ws.textAll(String(camState)); }
 void notifyClients_led() { ws.textAll(String(ledState + 2)); }
 void notifyClients_door() { ws.textAll(String(doorState + 4)); }
+void notifyClients_night() { ws.textAll(String(nightState + 6)); }
+void notifyClients_fill() { ws.textAll(String(fillState + 8)); }
+
+
 
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) 
@@ -267,11 +276,29 @@ String processor(const String& var){
   }
   if(var == "DOOR_STATE"){
     if (doorState){
-      return "OPEN";
-    }
-    else{
       return "CLOSED";
     }
+    else{
+      return "OPEN";
+    }
+  }
+  if(var == "NIGHT_STATE")
+  {
+    if (nightState){
+      return "ON";
+    }
+    else{
+      return "OFF";
+    } 
+  }
+  if(var == "FILL_STATE")
+  {
+    if (fillState){
+      return "EMPTY";
+    }
+    else{
+      return "FULL";
+    } 
   }
 }
 
@@ -318,21 +345,19 @@ void setup(){
     return;
   }
 
-  pinMode(camPin, OUTPUT);
   pinMode(ledPin, OUTPUT);
   pinMode(doorPin, OUTPUT);
   pinMode(redledPin, OUTPUT);
   pinMode(cam_atmega_pin, INPUT);
-  pinMode(test_1_pin, INPUT);
-  pinMode(test_2_pin, INPUT);
-  pinMode(test_3_pin, INPUT);
-  pinMode(test_4_pin, INPUT);
+  pinMode(pin_14, INPUT);
+  pinMode(pin_15, INPUT_PULLDOWN);
+  pinMode(pin_2, INPUT_PULLDOWN);
 
+  
+ 
 
-
-  digitalWrite(camPin, LOW);
   digitalWrite(ledPin, LOW);
-  digitalWrite(doorPin, LOW);
+  digitalWrite(doorPin, HIGH);
   digitalWrite(redledPin, LOW);
 
   
@@ -365,31 +390,92 @@ void setup(){
 
 void loop() {
   ws.cleanupClients();
-  //digitalWrite(camPin, camState);
-  digitalWrite(ledPin, ledState);
-  digitalWrite(doorPin, doorState);
-  int pin_12, pin_16, pin_0, pin_3, pin_1;
-  pin_12 = digitalRead(cam_atmega_pin);
-  pin_16 = digitalRead(test_1_pin);
-  pin_0 = digitalRead(test_2_pin);
-  pin_3 = digitalRead(test_3_pin);
-  pin_1 = digitalRead(test_4_pin);
-  if (pin_12 == 1)
+
+  if (ledState == HIGH || local_ledState == HIGH)
   {
-    digitalWrite(redledPin, HIGH);
-    ws.textAll(String(1));
+    digitalWrite(ledPin, HIGH);
+    //Serial.println("camera flash!");
+
+  }
+  else 
+  {
+    digitalWrite(ledPin, LOW);
+  }
+  digitalWrite(doorPin, doorState);
+  int bird_detected, squirrel_detected, feed_empty, night_mode, empty; 
+
+  bird_detected = digitalRead(cam_atmega_pin);
+  squirrel_detected = digitalRead(pin_14);
+  night_mode = digitalRead(pin_15);
+  empty = digitalRead(pin_2);
+
+
+  if (bird_detected == 1) {
+    if (camState == 0) {
+      ws.textAll(String(1));
+    }   }
+  else { 
+    if (camState == 0) {
+      ws.textAll(String(0));
+    } 
+  }
+
+  if (squirrel_detected == 1) 
+  { 
+    local_ledState = HIGH;
+    ws.textAll(String(3));
+    //Serial.println("PIN HIGH");
+
+  }
+  else 
+  { 
+    if (ledState == LOW) 
+    {
+      local_ledState = LOW;
+      ws.textAll(String(2));
+    }
+    else
+    {
+      local_ledState = LOW;
+    }
+  }
+
+  if (night_mode == 1) 
+  {
+    if (nightState == 0) 
+    {    
+      nightState = HIGH;
+      notifyClients_night();
+    }
   }
   else
   {
-    if (camState == 0)
-    {
-      digitalWrite(redledPin, LOW);
-      ws.textAll(String(0));
-    }   
-  }  
+    if (nightState == 1) 
+    {    
+      nightState = LOW;
+      notifyClients_night();
+    }
+  }
+
+  if (empty == 1) 
+  {
+    if (fillState == 0) 
+    {    
+      fillState = HIGH;
+      notifyClients_fill();
+    }
+  }
+  else
+  {
+    if (fillState == 1) 
+    {    
+      fillState = LOW;
+      notifyClients_fill();
+    }
+  }
+
+
   delay(1000);
 
-  
-  
 
 }

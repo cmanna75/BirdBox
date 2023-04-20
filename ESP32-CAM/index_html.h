@@ -44,6 +44,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     padding-top:10px;
     padding-bottom:20px;
     margin-right: 20px;
+    margin-left: 20px;
   }
   .button {
     padding: 15px 50px;
@@ -51,7 +52,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     text-align: center;
     outline: none;
     color: #fff;
-    background-color: #0f8b8d;
+    background-color: #c90411;
     border: none;
     border-radius: 5px;
     -webkit-touch-callout: none;
@@ -62,11 +63,8 @@ const char index_html[] PROGMEM = R"rawliteral(
     user-select: none;
     -webkit-tap-highlight-color: rgba(0,0,0,0);
   }
-  .button:hover {
-    background-color: #0f8b8d
-  }
   .button:active {
-    background-color: #0f8b8d;
+    background-color: #c90411;
     box-shadow: 2 2px #CDCDCD;
     transform: translateY(2px);
   }
@@ -80,6 +78,18 @@ const char index_html[] PROGMEM = R"rawliteral(
 <body>
   <div class="topnav">
     <h1>Bird Box</h1>
+  </div>
+  <div class="content">  
+    <div class="card">
+      <h2>NIGHT MODE</h2>
+      <p class="state">state: <span id="night_state">%NIGHT_STATE%</span></p>
+      <p><button id="night_button" class="button">Night</button></p>
+    </div>
+    <div class="card">
+      <h2>Feeder Fill Status</h2>
+      <p class="state">state: <span id="fill_state">%FILL_STATE%</span></p>
+      <p><button id="fill_button" class="button">Fill</button></p>
+    </div>
   </div>
   <img src="" id="photo">
   <div class="content">
@@ -122,11 +132,15 @@ const char index_html[] PROGMEM = R"rawliteral(
     switch(event.data)
     {
       case '0': document.getElementById("cam_state").innerHTML = "OFF"; document.getElementById('cam_button').style.backgroundColor = "#c90411"; document.getElementById("photo").src = ""; break;
-      case '1': document.getElementById("cam_state").innerHTML = "ON &nbsp;"; document.getElementById('cam_button').style.backgroundColor = "#04b50a"; document.getElementById("photo").src = window.location.href + "stream"; break;
+      case '1': document.getElementById("cam_state").innerHTML = "ON &nbsp;"; document.getElementById('cam_button').style.backgroundColor = "#04b50a"; document.getElementById("photo").src = window.location.href + "stream" + "?width=500&height=500"; break;
       case '2': document.getElementById("led_state").innerHTML = "OFF"; document.getElementById('led_button').style.backgroundColor = "#c90411"; break;
       case '3': document.getElementById("led_state").innerHTML = "ON &nbsp;"; document.getElementById('led_button').style.backgroundColor = "#04b50a"; break;
-      case '4': document.getElementById("door_state").innerHTML = "CLOSED"; document.getElementById('door_button').style.backgroundColor = "#c90411"; break;
-      case '5': document.getElementById("door_state").innerHTML = "OPEN &nbsp;"; document.getElementById('door_button').style.backgroundColor = "#04b50a"; break;
+      case '4': document.getElementById("door_state").innerHTML = "OPEN &nbsp;"; document.getElementById('door_button').style.backgroundColor = "#04b50a"; break;
+      case '5': document.getElementById("door_state").innerHTML = "CLOSED"; document.getElementById('door_button').style.backgroundColor = "#c90411"; break;
+      case '6': document.getElementById("night_state").innerHTML = "OFF"; document.getElementById('night_button').style.backgroundColor = "#c90411"; break;
+      case '7': document.getElementById("night_state").innerHTML = "ON &nbsp;"; document.getElementById('night_button').style.backgroundColor = "#04b50a"; break;
+      case '8': document.getElementById("fill_state").innerHTML = "FULL"; document.getElementById('fill_button').style.backgroundColor = "#04b50a"; break;
+      case '9': document.getElementById("fill_state").innerHTML = "EMPTY &nbsp;"; document.getElementById('fill_button').style.backgroundColor = "#c90411"; break;
     }
   }
 
