@@ -11,6 +11,8 @@
 #define SERVO_MIN_PULSE_WIDTH 50u
 #define SERVO_MAX_PULSE_WIDTH 250u
 #define ULTRASONIC_DISTANCE_THRESHOLD 7
+#define SQUIRREL_WEIGHT_THRESHOLD 300
+#define FOOD_WEIGHT_THRESHOLD 0
 
 #define FOSC 9830400            // Clock frequency = Oscillator freq.
 #define BAUD 9600               // UART0 baud rate
@@ -32,6 +34,7 @@ int main(){
     if(PINC & (1 << PINC1)) { //if lid switch is closed, operate normally
       if(check_servo()){ //returns false if night time
         check_ultrasonic();
+        check_weight();
       }
     }
     //debug(); //allows serial commands
@@ -82,7 +85,7 @@ void init(){
   PORTB &= ~(1<<PB2);
 
   
-  //feed tube weight output
+  //feed tube weight input
   DDRC &= ~(1<<DDC2);
   PORTC &= ~(1<<PC2);
 
@@ -101,6 +104,15 @@ void init(){
   //night mode output
   DDRD |= (1<<DDD2);
   PORTD &= ~(1<<PD2);
+
+
+  //ADC
+  // Enable ADC and set prescaler to 128
+  ADCSRA |= (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+
+  // Set AVCC as the reference voltage
+  ADMUX |= (1 << REFS0);
+
 
 }
 
@@ -225,8 +237,40 @@ int check_servo(){
 }
 
 void check_weight(){
+
+  unsigned short squirrel_adc;
+  unsigned short food_adc;
+
+
+  //adc polling
+
+  //food polling
+  ADMUX &= 0xF0; // clear the ADC channel selection bits
+  ADMUX |= (1 << MUX1); // select the ADC channel for PC3
+  ADCSRA |= (1 << ADSC); // start the conversion
+  while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
+  food_adc = ADC; // read the ADC result
+  
+  _delay_ms(10);
+  //squirrel polling
+  ADMUX &= 0xF0; // clear the ADC channel selection bits
+  ADMUX |= (1 << MUX2); // select the ADC channel for PC5
+  ADCSRA |= (1 << ADSC); // start the conversion
+  while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
+  squirrel_adc = ADC; // read the ADC result
+
+  char serial_str[10];
+  serial_out('f');
+  itoa(food_adc,serial_str,10);
+  serial_send_string(serial_str);
+  serial_out('\n');
+  serial_out('s');
+  itoa(squirrel_adc,serial_str,10);
+  serial_send_string(serial_str);
+  serial_out('\n');
+
   //feed tube weight low make output high
-  if( !(PINC & (1<<PINC2))){
+  if(food_adc > FOOD_WEIGHT_THRESHOLD){
     PORTC |= (1<<PC3);
   }
   else{
@@ -234,7 +278,7 @@ void check_weight(){
   }
 
   //squirrel weight sensor
-  if( (PINC & (1<<PINC4))){
+  if( (squirrel_adc > SQUIRREL_WEIGHT_THRESHOLD)){
     PORTC |= (1<<PC5);
   }
   else{
