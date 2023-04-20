@@ -22,14 +22,19 @@ void serial_send_string(char*);
 char serial_in();
 void check_ultrasonic();
 int check_servo();
+void debug();
+int debug_flag = 0;
+void check_weight();
 
 int main(){
+  init();
   while(1){
     if(PINC & (1 << PINC1)) { //if lid switch is closed, operate normally
       if(check_servo()){ //returns false if night time
         check_ultrasonic();
       }
     }
+    //debug(); //allows serial commands
     _delay_ms(10);
   }
   return 0;
@@ -65,7 +70,8 @@ void init(){
                           // one stop bit , 8 data bits
   //wifi stuff
   DDRB &= ~(1<<DDB0); //make PB0 an input for open/close servo
-  DDRD |= (1<<DDD7);
+  DDRD |= (1<<DDD7); //make PD7 an output for trigger bird is there
+  PORTD &= ~(1<<PD7); //make low at first
  
   //Servo stuff
   pwm_init();
@@ -73,6 +79,28 @@ void init(){
 
   //phototransistor
   DDRB &= ~(1<<DDB2);
+  PORTB &= ~(1<<PB2);
+
+  
+  //feed tube weight output
+  DDRC &= ~(1<<DDC2);
+  PORTC &= ~(1<<PC2);
+
+  //feed tube weight output
+  DDRC |= (1<<DDC3);
+  PORTC &= ~(1<<PC3);
+
+  //squirrel weight input
+  DDRC &= ~(1<<DDC4);
+  PORTC &= ~(1<<PC4);
+
+  //squirrel weight output
+  DDRC |= (1<<DDC5);
+  PORTC &= ~(1<<PC5);
+
+  //night mode output
+  DDRD |= (1<<DDD2);
+  PORTD &= ~(1<<PD2);
 
 }
 
@@ -95,8 +123,10 @@ void serial_send_string (char* str)
 //reads in 1 char
 char serial_in ()
 {
-  while ( !( UCSR0A & (1 << RXC0 )) );
-  return UDR0;
+  if( (UCSR0A & (1 << RXC0))){
+    return UDR0;
+  }
+  else return '\n';
 }
 
 
@@ -106,6 +136,39 @@ void check_ultrasonic(){
   PORTD |= (1<< PD5);
   _delay_us(10);
   PORTD &= ~(1 << PD5);
+}
+
+void debug(){
+  char input = serial_in();
+  //ultrasonic
+  if(input == 'u'){
+    debug_flag = 1;
+    check_ultrasonic();
+  }
+  //open servo
+  else if(input == 'c'){
+    servo_set(0,180);
+  }
+  //close servo
+  else if(input == 'o'){
+    servo_set(50,180);
+  }
+  else if(input == 't'){
+    serial_send_string("test\n");
+  }
+  else if(input == '\n'||input == '\r'){
+    //if carriage returns do nothing
+  }
+  else if(input == 'l'){
+    PORTC |= 1 << PC0;      // Turns on RED debug LED
+    _delay_ms(400);
+    PORTC &= ~(1 << 0);
+    _delay_ms(400);
+    
+  }
+  else{
+    serial_send_string("invalid command\n");
+  }
 }
 
 
@@ -121,13 +184,19 @@ ISR(PCINT2_vect){
     uint8_t pulse_time = TCNT0;
     uint8_t oldSREG = SREG; 
     cli(); //disable interrupt
-    char buffer[100];
-    itoa(pulse_time, buffer, 10);
-    serial_send_string(buffer); //send ultrasonic distance
-    serial_out('\n');
+    if(debug_flag){
+      char buffer[100];
+      itoa(pulse_time, buffer, 10);
+      serial_send_string(buffer); //send ultrasonic distance
+      serial_out('\n');
+      debug_flag = 0;
+    }
     //if ultrasonic is below distance output the camera
     if(pulse_time <= ULTRASONIC_DISTANCE_THRESHOLD){
       PORTD |= (1 << PD7);
+    }
+    else{
+      PORTD &= ~(1 << PD7);
     }
     SREG = oldSREG; //enable interrupt
   }
@@ -135,19 +204,41 @@ ISR(PCINT2_vect){
 
 int check_servo(){
   if( (PINB & (1<<PINB2))){ //if sunlight
-        /*
-        if(PINB & (1<< PINB0)){
-        servo_set(50,180);
-        }
-        else{
-          servo_set(0,180);
-        }  
-        */
-        servo_set(50,80);
-        return 1;
+    //make night mode pin 0
+    PORTD &= ~(1<<PD2);
+    if( !(PINB & (1<< PINB0))){
+    servo_set(50,180);
+    }
+    else{
+      servo_set(0,180);
+    }  
+
+    //servo_set(50,180);
+    return 1;
   }
   else{ //else night time close door
+        //make night mode pin high
+        PORTD |= (1<<PD2);
         servo_set(0,180);
         return 0;
       }
+}
+
+void check_weight(){
+  //feed tube weight low make output high
+  if( !(PINC & (1<<PINC2))){
+    PORTC |= (1<<PC3);
   }
+  else{
+    PORTC &= ~(1<<PC3);
+  }
+
+  //squirrel weight sensor
+  if( (PINC & (1<<PINC4))){
+    PORTC |= (1<<PC5);
+  }
+  else{
+    PORTC &= ~(1<<PC5);
+  }
+
+}

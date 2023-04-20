@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "SWseriale.h"
+//#include "SWseriale.h"
 #include "timer1_hal.h"
 
 #define SERVO_MIN_ANGLE 0
@@ -31,7 +31,11 @@ int main(){
   while(1){
     //Toggle Switch
     while (PINC & (1 << PINC1)) { // If PC1 is HIGH
-      
+      if( (PINB & (1<<PINB2))){
+        servo_set(50,180);
+      }else{
+        servo_set(0,180);
+      }
       /*
       if( (PINB & (1<<PINB2))){ //if sunlight
 
@@ -53,6 +57,7 @@ int main(){
       _delay_ms(50);
 
       */
+      /*
       char input = serial_in();
       //ultrasonic
       if(input == 'u'){
@@ -82,7 +87,7 @@ int main(){
       else{
         serial_send_string("invalid command\n");
       }
-      
+      */
       _delay_us(10);
     }
     PORTC |= 1 << PC0;      // Turns on RED debug LED
@@ -124,7 +129,7 @@ void init(){
   UCSR0C = (3 << UCSZ00 ); // Set for async . operation , no parity ,
                           // one stop bit , 8 data bits
   //softserial
-  SWseriale_begin();
+  //SWseriale_begin();
 
   //wifi stuff
   DDRB &= ~(1<<DDB0); //make PB0 an input

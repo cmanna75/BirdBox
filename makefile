@@ -28,6 +28,7 @@ COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 # symbolic targets:
 all:	main.hex
 
+#debug.o: debug.c timer1_hal.o
 birdbox.o: birdbox.c timer1_hal.o
 SWseriale.o: SWseriale.c SWseriale.h
 timer1_hal.o: timer1_hal.c timer1_hal.h
