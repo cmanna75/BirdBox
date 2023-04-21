@@ -14,7 +14,7 @@
 #define SQUIRREL_WEIGHT_THRESHOLD 300
 #define FOOD_WEIGHT_THRESHOLD 300
 #define OPEN_DOOR 0
-#define CLOSE_DOOR 50 
+#define CLOSE_DOOR 45 
 
 #define FOSC 9830400            // Clock frequency = Oscillator freq.
 #define BAUD 9600               // UART0 baud rate
