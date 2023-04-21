@@ -20,22 +20,30 @@
 #define BAUD 9600               // UART0 baud rate
 #define MYUBRR (FOSC/16/BAUD)-1   // Value for UBRR0 register
 
+#define NIGHTMODE 0
+#define DAY_DOOR_OPEN 1
+#define DAY_DOOR_CLOSED 2
+
+
 void init();
 void serial_out(char);
 void serial_send_string(char*);
 char serial_in();
 void check_ultrasonic();
-int check_servo();
+void check_servo();
 void debug();
 int debug_flag = 0;
 void check_weight();
-
+int state;
 int main(){
   init();
   while(1){
     if(PINC & (1 << PINC1)) { //if lid switch is closed, operate normally
-      if(check_servo()){ //returns false if night time
-        check_ultrasonic();
+      check_servo();
+      if(state == DAY_DOOR_OPEN){
+          check_ultrasonic();
+        }
+      if(state != NIGHTMODE){
         check_weight();
       }
     }
@@ -115,6 +123,7 @@ void init(){
   // Set AVCC as the reference voltage
   ADMUX |= (1 << REFS0);
 
+  state = DAY_DOOR_OPEN;
 
 }
 
@@ -216,25 +225,24 @@ ISR(PCINT2_vect){
   }
 }
 
-int check_servo(){
+void check_servo(){
   if( (PINB & (1<<PINB2))){ //if sunlight
     //make night mode pin 0
     PORTD &= ~(1<<PD2);
     if( !(PINB & (1<< PINB0))){
-    servo_set(OPEN_DOOR,180);
+      servo_set(OPEN_DOOR,180);
+      state = DAY_DOOR_OPEN;
     }
     else{
       servo_set(CLOSE_DOOR,180);
+      state = DAY_DOOR_CLOSED;
     }  
-
-    //servo_set(50,180);
-    return 1;
   }
   else{ //else night time close door
         //make night mode pin high
         PORTD |= (1<<PD2);
         servo_set(CLOSE_DOOR,180);
-        return 0;
+        state = NIGHTMODE;
       }
 }
 
