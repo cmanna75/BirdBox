@@ -12,7 +12,9 @@
 #define SERVO_MAX_PULSE_WIDTH 250u
 #define ULTRASONIC_DISTANCE_THRESHOLD 7
 #define SQUIRREL_WEIGHT_THRESHOLD 300
-#define FOOD_WEIGHT_THRESHOLD 0
+#define FOOD_WEIGHT_THRESHOLD 300
+#define OPEN_DOOR 0
+#define CLOSE_DOOR 50 
 
 #define FOSC 9830400            // Clock frequency = Oscillator freq.
 #define BAUD 9600               // UART0 baud rate
@@ -78,7 +80,7 @@ void init(){
  
   //Servo stuff
   pwm_init();
-  servo_set(0,180);
+  servo_set(CLOSE_DOOR,180);
 
   //phototransistor
   DDRB &= ~(1<<DDB2);
@@ -159,11 +161,11 @@ void debug(){
   }
   //open servo
   else if(input == 'c'){
-    servo_set(0,180);
+    servo_set(CLOSE_DOOR,180);
   }
   //close servo
   else if(input == 'o'){
-    servo_set(50,180);
+    servo_set(OPEN_DOOR,180);
   }
   else if(input == 't'){
     serial_send_string("test\n");
@@ -219,10 +221,10 @@ int check_servo(){
     //make night mode pin 0
     PORTD &= ~(1<<PD2);
     if( !(PINB & (1<< PINB0))){
-    servo_set(50,180);
+    servo_set(OPEN_DOOR,180);
     }
     else{
-      servo_set(0,180);
+      servo_set(CLOSE_DOOR,180);
     }  
 
     //servo_set(50,180);
@@ -231,7 +233,7 @@ int check_servo(){
   else{ //else night time close door
         //make night mode pin high
         PORTD |= (1<<PD2);
-        servo_set(0,180);
+        servo_set(CLOSE_DOOR,180);
         return 0;
       }
 }
@@ -240,35 +242,14 @@ void check_weight(){
 
   unsigned short squirrel_adc;
   unsigned short food_adc;
-
-
-  //adc polling
-
+ 
   //food polling
-  ADMUX &= 0xF0; // clear the ADC channel selection bits
+  //ADMUX &= 0xF0; // clear the ADC channel selection bits
+  ADMUX &= ~(1 << MUX3) & ~(1 << MUX2) & ~(1 << MUX1) & ~(1 << MUX0);
   ADMUX |= (1 << MUX1); // select the ADC channel for PC3
   ADCSRA |= (1 << ADSC); // start the conversion
   while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
   food_adc = ADC; // read the ADC result
-  
-  _delay_ms(10);
-  //squirrel polling
-  ADMUX &= 0xF0; // clear the ADC channel selection bits
-  ADMUX |= (1 << MUX2); // select the ADC channel for PC5
-  ADCSRA |= (1 << ADSC); // start the conversion
-  while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
-  squirrel_adc = ADC; // read the ADC result
-
-  char serial_str[10];
-  serial_out('f');
-  itoa(food_adc,serial_str,10);
-  serial_send_string(serial_str);
-  serial_out('\n');
-  serial_out('s');
-  itoa(squirrel_adc,serial_str,10);
-  serial_send_string(serial_str);
-  serial_out('\n');
-
   //feed tube weight low make output high
   if(food_adc > FOOD_WEIGHT_THRESHOLD){
     PORTC |= (1<<PC3);
@@ -277,6 +258,14 @@ void check_weight(){
     PORTC &= ~(1<<PC3);
   }
 
+
+  //squirrel polling
+  //ADMUX &= 0xF0; // clear the ADC channel selection bits
+  ADMUX &= ~(1 << MUX3) & ~(1 << MUX2) & ~(1 << MUX1) & ~(1 << MUX0);
+  ADMUX |= (1 << MUX2); // select the ADC channel for PC5
+  ADCSRA |= (1 << ADSC); // start the conversion
+  while (ADCSRA & (1 << ADSC)); // wait for the conversion to complete
+  squirrel_adc = ADC; // read the ADC result
   //squirrel weight sensor
   if( (squirrel_adc > SQUIRREL_WEIGHT_THRESHOLD)){
     PORTC |= (1<<PC5);
