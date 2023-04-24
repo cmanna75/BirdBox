@@ -23,7 +23,7 @@ bool local_ledState = 0;
 bool doorState = 1;
 bool redledState = 0;
 bool nightState = 0;
-bool fillState = 0;
+bool fillState = 1;
 
 // working
 const int ledPin = 4;
@@ -294,10 +294,10 @@ String processor(const String& var){
   if(var == "FILL_STATE")
   {
     if (fillState){
-      return "EMPTY";
+      return "FULL";
     }
     else{
-      return "FULL";
+      return "EMPTY";
     } 
   }
 }
