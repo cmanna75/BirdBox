@@ -1,3 +1,7 @@
 /debug.o
 /main.elf
 /main.hex
+/timer1_hal.o
+/SWseriale.o
+/birdbox.o
+
